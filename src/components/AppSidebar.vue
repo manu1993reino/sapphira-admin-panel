@@ -6,10 +6,22 @@ const auth   = useAuthStore()
 const router = useRouter()
 
 const mainLinks = [
-  { to: '/dashboard', icon: '◈', label: 'Dashboard' },
-  { to: '/users',     icon: '◉', label: 'Clientes' },
-  { to: '/codes',     icon: '⌗', label: 'Códigos' },
-  { to: '/rewards',   icon: '✦', label: 'Recompensas' },
+  { to: '/dashboard',    icon: '◈', label: 'Dashboard' },
+  { to: '/users',        icon: '◉', label: 'Clientes' },
+  { to: '/codes',        icon: '⌗', label: 'Códigos' },
+  { to: '/rewards',      icon: '✦', label: 'Recompensas' },
+  { to: '/redemptions',  icon: '↩', label: 'Canjes' },
+]
+
+const contentLinks = [
+  { to: '/clinic-config', icon: '⚙', label: 'Config clínica' },
+  { to: '/team',          icon: '☺', label: 'Equipo' },
+  { to: '/categories',    icon: '▤', label: 'Categorías' },
+  { to: '/promotions',    icon: '★', label: 'Promociones' },
+  { to: '/testimonials',  icon: '❝', label: 'Testimonios' },
+  { to: '/gallery',       icon: '◫', label: 'Galería' },
+  { to: '/blog',          icon: '✎', label: 'Blog' },
+  { to: '/hours',         icon: '◷', label: 'Horarios' },
 ]
 
 const superLinks = [
@@ -17,8 +29,8 @@ const superLinks = [
   { to: '/admins',  icon: '◎', label: 'Admins' },
 ]
 
-function logout() {
-  auth.logout()
+async function logout() {
+  await auth.logout()
   router.push('/login')
 }
 </script>
@@ -33,6 +45,18 @@ function logout() {
     <nav class="sidebar-nav">
       <RouterLink
         v-for="link in mainLinks"
+        :key="link.to"
+        :to="link.to"
+        class="nav-link"
+        active-class="nav-link--active"
+      >
+        <span class="nav-icon">{{ link.icon }}</span>
+        {{ link.label }}
+      </RouterLink>
+
+      <div class="nav-section-label">Contenido</div>
+      <RouterLink
+        v-for="link in contentLinks"
         :key="link.to"
         :to="link.to"
         class="nav-link"

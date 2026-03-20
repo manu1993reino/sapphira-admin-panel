@@ -37,10 +37,14 @@ Credenciales de administrador gestionadas por el equipo de Valore Digital. El pa
 
 ## Funcionalidades
 
-- **Dashboard** — Estadísticas de actividad de la clínica
-- **Clientes** — Búsqueda y gestión de puntos (asignar / restar)
-- **Códigos** — Generación de códigos de vinculación en lote
+- **Dashboard** — Estadísticas de actividad (diferenciado por rol)
+- **Clientes** — Búsqueda y gestión de puntos (asignar / restar con modal)
+- **Códigos** — Generación de códigos de vinculación en lote + listado con estados
 - **Recompensas** — CRUD del catálogo de canjes
+- **Canjes** — Listado de canjes pendientes, marcar como usado
+- **CMS completo** — 8 vistas de contenido:
+  - Config clínica (datos generales + financiación + Google Place ID)
+  - Equipo, Categorías, Promociones, Testimonios, Galería, Blog, Horarios
 - **Clínicas** *(solo SUPERADMIN)* — Crear y activar/desactivar clínicas
 - **Administradores** *(solo SUPERADMIN)* — Crear admins y resetear contraseñas
 
@@ -48,17 +52,22 @@ Credenciales de administrador gestionadas por el equipo de Valore Digital. El pa
 
 ```
 src/
-├── stores/         # Pinia — auth.js
-├── services/       # api.js — fetch centralizado
-├── router/         # Vue Router con guards de rol
+├── stores/         # Pinia — auth.js (user info + role, NO token)
+├── services/       # api.js — fetch centralizado con credentials:'include'
+├── router/         # Vue Router con guards: requiresAuth + superOnly
 ├── components/     # AppSidebar, AppHeader
-├── views/          # Vistas por sección
-│   └── superadmin/ # Vistas exclusivas SUPERADMIN
-└── styles/         # global.css — dark theme
+├── views/          # Vistas principales (6)
+│   ├── content/    # CMS de la clínica (8 vistas)
+│   └── superadmin/ # Vistas exclusivas SUPERADMIN (2)
+└── styles/         # global.css — dark theme (#0F0F0F + #C8A96E)
 ```
 
-## Variables de entorno
+## Autenticación
 
-| Variable | Descripción |
-|----------|-------------|
-| `VITE_API_URL` | URL base del backend |
+El panel usa cookies HttpOnly (`sapphira_admin_access`) gestionadas por el backend. En localStorage solo se guardan datos no sensibles (role, clinicId) para routing guards. El token nunca se almacena en el cliente.
+
+## Notas
+
+- No requiere `.env` — el proxy de Vite redirige `/api` a `localhost:8080`
+- En producción, Nginx hace el proxy inverso
+- Dark theme con CSS variables, sin librerías UI externas

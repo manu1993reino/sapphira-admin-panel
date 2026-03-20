@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { getAllClinics, getAdminsByClinic, createAdmin, toggleAdminActive, resetAdminPassword } from '@/services/api'
 
-const auth     = useAuthStore()
 const clinics  = ref([])
 const selClinic = ref(null)
 const admins   = ref([])
@@ -20,10 +18,12 @@ const resetModal  = ref(null) // { admin }
 const newPassword = ref('')
 const resetErr    = ref('')
 const resetting   = ref(false)
+const showCreatePwd = ref(false)
+const showResetPwd  = ref(false)
 
 onMounted(async () => {
   try {
-    clinics.value = await getAllClinics(auth.token)
+    clinics.value = await getAllClinics()
     if (clinics.value.length) selClinic.value = clinics.value[0].id
   } catch {
     error.value = 'Error al cargar clínicas'
@@ -34,7 +34,7 @@ watch(selClinic, async (id) => {
   if (!id) return
   loading.value = true
   try {
-    admins.value = await getAdminsByClinic(auth.token, id)
+    admins.value = await getAdminsByClinic(id)
   } catch {
     error.value = 'Error al cargar admins'
   } finally {
@@ -45,7 +45,17 @@ watch(selClinic, async (id) => {
 function openCreate() {
   form.value = { username: '', password: '', clinicId: selClinic.value || '' }
   createErr.value = ''
+  showCreatePwd.value = false
   createModal.value = true
+}
+
+function validatePassword(pwd) {
+  if (pwd.length < 8) return 'Mínimo 8 caracteres'
+  if (!/[A-Z]/.test(pwd)) return 'Debe contener al menos una mayúscula'
+  if (!/[a-z]/.test(pwd)) return 'Debe contener al menos una minúscula'
+  if (!/[0-9]/.test(pwd)) return 'Debe contener al menos un número'
+  if (!/[^A-Za-z0-9]/.test(pwd)) return 'Debe contener al menos un símbolo'
+  return null
 }
 
 async function submitCreate() {
@@ -53,11 +63,16 @@ async function submitCreate() {
     createErr.value = 'Todos los campos son obligatorios'
     return
   }
+  const pwdErr = validatePassword(form.value.password)
+  if (pwdErr) {
+    createErr.value = pwdErr
+    return
+  }
   saving.value = true
   createErr.value = ''
   try {
-    await createAdmin(auth.token, { ...form.value, clinicId: Number(form.value.clinicId) })
-    admins.value = await getAdminsByClinic(auth.token, selClinic.value)
+    await createAdmin({ ...form.value, clinicId: Number(form.value.clinicId) })
+    admins.value = await getAdminsByClinic(selClinic.value)
     createModal.value = false
   } catch (e) {
     createErr.value = e.message || 'Error al crear'
@@ -68,8 +83,8 @@ async function submitCreate() {
 
 async function handleToggle(id) {
   try {
-    await toggleAdminActive(auth.token, id)
-    admins.value = await getAdminsByClinic(auth.token, selClinic.value)
+    await toggleAdminActive(id)
+    admins.value = await getAdminsByClinic(selClinic.value)
   } catch {
     error.value = 'Error al cambiar estado'
   }
@@ -79,17 +94,19 @@ function openReset(admin) {
   resetModal.value = { admin }
   newPassword.value = ''
   resetErr.value = ''
+  showResetPwd.value = false
 }
 
 async function submitReset() {
-  if (newPassword.value.length < 8) {
-    resetErr.value = 'Mínimo 8 caracteres'
+  const pwdErr = validatePassword(newPassword.value)
+  if (pwdErr) {
+    resetErr.value = pwdErr
     return
   }
   resetting.value = true
   resetErr.value = ''
   try {
-    await resetAdminPassword(auth.token, resetModal.value.admin.id, { newPassword: newPassword.value })
+    await resetAdminPassword(resetModal.value.admin.id, { password: newPassword.value })
     resetModal.value = null
   } catch (e) {
     resetErr.value = e.message || 'Error al resetear'
@@ -163,7 +180,10 @@ async function submitReset() {
         </div>
         <div class="form-group">
           <label class="form-label">Contraseña inicial</label>
-          <input v-model="form.password" class="form-input" type="password" placeholder="Mínimo 8 caracteres" />
+          <div style="position:relative">
+            <input v-model="form.password" class="form-input" :type="showCreatePwd ? 'text' : 'password'" placeholder="Mínimo 8 caracteres" style="padding-right:48px" />
+            <button type="button" class="eye-btn" @click="showCreatePwd = !showCreatePwd" :aria-label="showCreatePwd ? 'Ocultar' : 'Mostrar'">{{ showCreatePwd ? '🙈' : '👁' }}</button>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Clínica</label>
@@ -188,7 +208,10 @@ async function submitReset() {
         <div v-if="resetErr" class="alert alert-error">{{ resetErr }}</div>
         <div class="form-group">
           <label class="form-label">Nueva contraseña</label>
-          <input v-model="newPassword" class="form-input" type="password" placeholder="Mínimo 8 caracteres" />
+          <div style="position:relative">
+            <input v-model="newPassword" class="form-input" :type="showResetPwd ? 'text' : 'password'" placeholder="Mínimo 8 caracteres" style="padding-right:48px" />
+            <button type="button" class="eye-btn" @click="showResetPwd = !showResetPwd" :aria-label="showResetPwd ? 'Ocultar' : 'Mostrar'">{{ showResetPwd ? '🙈' : '👁' }}</button>
+          </div>
         </div>
         <div class="modal-actions">
           <button class="btn btn-secondary" @click="resetModal = null">Cancelar</button>

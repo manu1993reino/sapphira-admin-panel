@@ -1,12 +1,22 @@
 const BASE = import.meta.env.VITE_API_URL || ''
 
+let onUnauthorized = null
+
+export function setOnUnauthorized(callback) {
+  onUnauthorized = callback
+}
+
 async function request(path, options = {}) {
   const { headers: optHeaders, ...rest } = options
   const res = await fetch(`${BASE}${path}`, {
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...optHeaders },
     ...rest,
   })
-  if (res.status === 401) throw new Error('401')
+  if (res.status === 401) {
+    if (onUnauthorized) onUnauthorized()
+    throw new Error('401')
+  }
   if (res.status === 403) throw new Error('403')
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -16,105 +26,185 @@ async function request(path, options = {}) {
   return res.json()
 }
 
-function authHeaders(token) {
-  return { Authorization: `Bearer ${token}` }
-}
-
 // Auth
 export const adminLogin = (body) =>
   request('/api/v1/auth/admin/login', { method: 'POST', body: JSON.stringify(body) })
 
-// Stats
-export const getClinicStats = (token) =>
-  request('/api/v1/admin/stats', { headers: authHeaders(token) })
+export const adminLogout = () =>
+  request('/api/v1/auth/logout', { method: 'POST' })
 
-export const getGlobalStats = (token) =>
-  request('/api/v1/superadmin/stats', { headers: authHeaders(token) })
+// Stats
+export const getClinicStats = () =>
+  request('/api/v1/admin/stats')
+
+export const getGlobalStats = () =>
+  request('/api/v1/superadmin/stats')
 
 // Users
-export const searchUsers = (token, params = {}) => {
+export const searchUsers = (params = {}) => {
   const qs = new URLSearchParams(params).toString()
-  return request(`/api/v1/admin/users?${qs}`, { headers: authHeaders(token) })
+  return request(`/api/v1/admin/users?${qs}`)
 }
 
-export const assignPoints = (token, userClinicId, body) =>
+export const assignPoints = (userClinicId, body) =>
   request(`/api/v1/admin/users/${userClinicId}/points`, {
-    method: 'POST', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'POST', body: JSON.stringify(body)
   })
 
-export const deductPoints = (token, userClinicId, body) =>
+export const deductPoints = (userClinicId, body) =>
   request(`/api/v1/admin/users/${userClinicId}/points/deduct`, {
-    method: 'POST', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'POST', body: JSON.stringify(body)
   })
 
-export const getUserPointsHistory = (token, userClinicId) =>
-  request(`/api/v1/admin/users/${userClinicId}/points`, { headers: authHeaders(token) })
+export const getUserPointsHistory = (userClinicId) =>
+  request(`/api/v1/admin/users/${userClinicId}/points`)
 
 // Codes
-export const generateCodes = (token, body) =>
+export const generateCodes = (body) =>
   request('/api/v1/admin/codes/generate', {
-    method: 'POST', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'POST', body: JSON.stringify(body)
   })
 
-export const getCodes = (token, activeOnly = false) =>
-  request(`/api/v1/admin/codes?activeOnly=${activeOnly}`, { headers: authHeaders(token) })
+export const getCodes = (activeOnly = false) =>
+  request(`/api/v1/admin/codes?activeOnly=${activeOnly}`)
 
 // Rewards
-export const getRewards = (token) =>
-  request('/api/v1/admin/rewards', { headers: authHeaders(token) })  // NOTE: adjust if endpoint differs
+export const getRewards = () =>
+  request('/api/v1/admin/rewards')
 
-export const createReward = (token, body) =>
+export const createReward = (body) =>
   request('/api/v1/admin/rewards', {
-    method: 'POST', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'POST', body: JSON.stringify(body)
   })
 
-export const updateReward = (token, id, body) =>
+export const updateReward = (id, body) =>
   request(`/api/v1/admin/rewards/${id}`, {
-    method: 'PUT', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'PUT', body: JSON.stringify(body)
   })
 
-export const deleteReward = (token, id) =>
+export const deleteReward = (id) =>
   request(`/api/v1/admin/rewards/${id}`, {
-    method: 'DELETE', headers: authHeaders(token)
+    method: 'DELETE',
   })
 
-export const getRedemptions = (token) =>
-  request('/api/v1/admin/redemptions', { headers: authHeaders(token) })
+export const getRedemptions = () =>
+  request('/api/v1/admin/redemptions')
 
-export const markRedemptionUsed = (token, id) =>
+export const markRedemptionUsed = (id) =>
   request(`/api/v1/admin/redemptions/${id}/use`, {
-    method: 'PUT', headers: authHeaders(token)
+    method: 'PUT',
   })
+
+// Clinic Config
+export const getClinicConfig = (clinicId) =>
+  request(`/api/v1/clinic/${clinicId}/config`)
+
+export const updateClinicConfig = (body) =>
+  request('/api/v1/admin/clinic', { method: 'PUT', body: JSON.stringify(body) })
+
+// Hours
+export const updateHours = (body) =>
+  request('/api/v1/admin/hours', { method: 'PUT', body: JSON.stringify(body) })
+
+// Team
+export const createTeamMember = (body) =>
+  request('/api/v1/admin/team', { method: 'POST', body: JSON.stringify(body) })
+
+export const updateTeamMember = (id, body) =>
+  request(`/api/v1/admin/team/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteTeamMember = (id) =>
+  request(`/api/v1/admin/team/${id}`, { method: 'DELETE' })
+
+// Categories
+export const createCategory = (body) =>
+  request('/api/v1/admin/categories', { method: 'POST', body: JSON.stringify(body) })
+
+export const updateCategory = (id, body) =>
+  request(`/api/v1/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteCategory = (id) =>
+  request(`/api/v1/admin/categories/${id}`, { method: 'DELETE' })
+
+// Treatments
+export const createTreatment = (body) =>
+  request('/api/v1/admin/treatments', { method: 'POST', body: JSON.stringify(body) })
+
+export const updateTreatment = (id, body) =>
+  request(`/api/v1/admin/treatments/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteTreatment = (id) =>
+  request(`/api/v1/admin/treatments/${id}`, { method: 'DELETE' })
+
+// Promotions
+export const createPromotion = (body) =>
+  request('/api/v1/admin/promotions', { method: 'POST', body: JSON.stringify(body) })
+
+export const updatePromotion = (id, body) =>
+  request(`/api/v1/admin/promotions/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deletePromotion = (id) =>
+  request(`/api/v1/admin/promotions/${id}`, { method: 'DELETE' })
+
+// Testimonials
+export const createTestimonial = (body) =>
+  request('/api/v1/admin/testimonials', { method: 'POST', body: JSON.stringify(body) })
+
+export const updateTestimonial = (id, body) =>
+  request(`/api/v1/admin/testimonials/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteTestimonial = (id) =>
+  request(`/api/v1/admin/testimonials/${id}`, { method: 'DELETE' })
+
+// Gallery
+export const createGalleryItem = (body) =>
+  request('/api/v1/admin/gallery', { method: 'POST', body: JSON.stringify(body) })
+
+export const updateGalleryItem = (id, body) =>
+  request(`/api/v1/admin/gallery/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteGalleryItem = (id) =>
+  request(`/api/v1/admin/gallery/${id}`, { method: 'DELETE' })
+
+// Blog
+export const createBlogPost = (body) =>
+  request('/api/v1/admin/blog', { method: 'POST', body: JSON.stringify(body) })
+
+export const updateBlogPost = (id, body) =>
+  request(`/api/v1/admin/blog/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteBlogPost = (id) =>
+  request(`/api/v1/admin/blog/${id}`, { method: 'DELETE' })
 
 // SuperAdmin — Clinics
-export const getAllClinics = (token) =>
-  request('/api/v1/superadmin/clinics', { headers: authHeaders(token) })
+export const getAllClinics = () =>
+  request('/api/v1/superadmin/clinics')
 
-export const createClinic = (token, body) =>
+export const createClinic = (body) =>
   request('/api/v1/superadmin/clinics', {
-    method: 'POST', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'POST', body: JSON.stringify(body)
   })
 
-export const toggleClinicActive = (token, id) =>
-  request(`/api/v1/superadmin/clinics/${id}/toggle-active`, {
-    method: 'PUT', headers: authHeaders(token)
+export const toggleClinicActive = (id) =>
+  request(`/api/v1/superadmin/clinics/${id}/toggle`, {
+    method: 'PATCH',
   })
 
 // SuperAdmin — Admins
-export const getAdminsByClinic = (token, clinicId) =>
-  request(`/api/v1/superadmin/clinics/${clinicId}/admins`, { headers: authHeaders(token) })
+export const getAdminsByClinic = (clinicId) =>
+  request(`/api/v1/superadmin/clinics/${clinicId}/admins`)
 
-export const createAdmin = (token, body) =>
+export const createAdmin = (body) =>
   request('/api/v1/superadmin/admins', {
-    method: 'POST', headers: authHeaders(token), body: JSON.stringify(body)
+    method: 'POST', body: JSON.stringify(body)
   })
 
-export const toggleAdminActive = (token, id) =>
-  request(`/api/v1/superadmin/admins/${id}/toggle-active`, {
-    method: 'PUT', headers: authHeaders(token)
+export const toggleAdminActive = (id) =>
+  request(`/api/v1/superadmin/admins/${id}/toggle`, {
+    method: 'PATCH',
   })
 
-export const resetAdminPassword = (token, id, body) =>
-  request(`/api/v1/superadmin/admins/${id}/reset-password`, {
-    method: 'PUT', headers: authHeaders(token), body: JSON.stringify(body)
+export const resetAdminPassword = (id, body) =>
+  request(`/api/v1/superadmin/admins/${id}/password`, {
+    method: 'PATCH', body: JSON.stringify(body)
   })
