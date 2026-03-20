@@ -12,8 +12,8 @@ onMounted(async () => {
   if (!auth.isAuthenticated) return
   try {
     stats.value = auth.isSuper
-      ? await getGlobalStats(auth.token)
-      : await getClinicStats(auth.token)
+      ? await getGlobalStats()
+      : await getClinicStats()
   } catch (e) {
     if (auth.isAuthenticated) error.value = 'No se pudieron cargar las estadísticas'
   } finally {

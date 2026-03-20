@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { getRewards, createReward, updateReward, deleteReward, markRedemptionUsed } from '@/services/api'
 
-const auth      = useAuthStore()
 const rewards   = ref([])
 const loading   = ref(false)
 const error     = ref('')
@@ -18,7 +16,7 @@ async function loadRewards() {
   loading.value = true
   error.value = ''
   try {
-    rewards.value = await getRewards(auth.token)
+    rewards.value = await getRewards()
   } catch {
     error.value = 'Error al cargar recompensas'
   } finally {
@@ -52,9 +50,9 @@ async function submitForm() {
   try {
     const body = { ...form.value, pointsCost: Number(form.value.pointsCost) }
     if (modal.value.mode === 'create') {
-      await createReward(auth.token, body)
+      await createReward(body)
     } else {
-      await updateReward(auth.token, modal.value.id, body)
+      await updateReward(modal.value.id, body)
     }
     await loadRewards()
     closeModal()
@@ -68,7 +66,7 @@ async function submitForm() {
 async function handleDelete(id) {
   if (!confirm('¿Eliminar esta recompensa?')) return
   try {
-    await deleteReward(auth.token, id)
+    await deleteReward(id)
     await loadRewards()
   } catch {
     error.value = 'Error al eliminar'

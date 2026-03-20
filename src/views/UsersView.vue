@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { searchUsers, assignPoints, deductPoints } from '@/services/api'
 
-const auth    = useAuthStore()
 const users   = ref([])
 const search  = ref('')
 const loading = ref(false)
@@ -20,7 +18,7 @@ async function loadUsers() {
   loading.value = true
   error.value   = ''
   try {
-    users.value = await searchUsers(auth.token, { search: search.value })
+    users.value = await searchUsers({ search: search.value })
   } catch {
     error.value = 'Error al cargar clientes'
   } finally {
@@ -49,7 +47,7 @@ async function submitPoints() {
   try {
     const body = { points: Number(points.value), reason: reason.value || undefined }
     const fn   = modal.value.mode === 'assign' ? assignPoints : deductPoints
-    const updated = await fn(auth.token, modal.value.user.userClinicId, body)
+    const updated = await fn(modal.value.user.userClinicId, body)
     // Update user in list
     const idx = users.value.findIndex(u => u.userClinicId === modal.value.user.userClinicId)
     if (idx !== -1) users.value[idx] = updated

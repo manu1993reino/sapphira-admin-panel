@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { generateCodes, getCodes } from '@/services/api'
 
-const auth      = useAuthStore()
 const codes     = ref([])
 const loading   = ref(false)
 const error     = ref('')
@@ -20,7 +18,7 @@ async function loadCodes() {
   loading.value = true
   error.value = ''
   try {
-    codes.value = await getCodes(auth.token, activeOnly.value)
+    codes.value = await getCodes(activeOnly.value)
   } catch {
     error.value = 'Error al cargar códigos'
   } finally {
@@ -39,7 +37,7 @@ async function handleGenerate() {
   }
   genLoad.value = true
   try {
-    const newCodes = await generateCodes(auth.token, { quantity: Number(qty.value), expiresInHours: Number(hours.value) })
+    const newCodes = await generateCodes({ quantity: Number(qty.value), expiresInHours: Number(hours.value) })
     genOk.value = `${newCodes.length} código(s) generado(s)`
     await loadCodes()
   } catch (e) {

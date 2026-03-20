@@ -1,9 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { getAllClinics, createClinic, toggleClinicActive } from '@/services/api'
 
-const auth    = useAuthStore()
 const clinics = ref([])
 const loading = ref(false)
 const error   = ref('')
@@ -18,7 +16,7 @@ async function loadClinics() {
   loading.value = true
   error.value = ''
   try {
-    clinics.value = await getAllClinics(auth.token)
+    clinics.value = await getAllClinics()
   } catch {
     error.value = 'Error al cargar clínicas'
   } finally {
@@ -42,7 +40,7 @@ async function submitCreate() {
   saving.value = true
   modalErr.value = ''
   try {
-    await createClinic(auth.token, form.value)
+    await createClinic(form.value)
     await loadClinics()
     showModal.value = false
   } catch (e) {
@@ -54,7 +52,7 @@ async function submitCreate() {
 
 async function handleToggle(id) {
   try {
-    await toggleClinicActive(auth.token, id)
+    await toggleClinicActive(id)
     await loadClinics()
   } catch {
     error.value = 'Error al cambiar estado'

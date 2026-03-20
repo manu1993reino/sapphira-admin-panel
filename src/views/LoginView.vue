@@ -1,14 +1,24 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router   = useRouter()
+const route    = useRoute()
 const auth     = useAuthStore()
 const username = ref('')
 const password = ref('')
 const error    = ref('')
 const loading  = ref(false)
+const showPwd  = ref(false)
+const expired  = ref(false)
+
+onMounted(() => {
+  if (route.query.expired) {
+    expired.value = true
+    router.replace('/login')
+  }
+})
 
 async function handleLogin() {
   error.value = ''
@@ -39,6 +49,7 @@ async function handleLogin() {
       </div>
 
       <form @submit.prevent="handleLogin">
+        <div v-if="expired" class="alert alert-warn">Tu sesión ha caducado. Inicia sesión de nuevo.</div>
         <div v-if="error" class="alert alert-error">{{ error }}</div>
 
         <div class="form-group">
@@ -48,7 +59,12 @@ async function handleLogin() {
 
         <div class="form-group">
           <label class="form-label">Contraseña</label>
-          <input v-model="password" class="form-input" type="password" placeholder="••••••••" autocomplete="current-password" />
+          <div class="pwd-wrap">
+            <input v-model="password" class="form-input" :type="showPwd ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password" />
+            <button type="button" class="eye-btn" @click="showPwd = !showPwd" :aria-label="showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              {{ showPwd ? '🙈' : '👁' }}
+            </button>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" :disabled="loading">
@@ -71,4 +87,22 @@ async function handleLogin() {
 .login-logo { text-align: center; margin-bottom: 32px; }
 .logo-title { color: var(--gold); font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
 .logo-sub   { color: var(--dim); font-size: 13px; }
+.pwd-wrap   { position: relative; }
+.pwd-wrap .form-input { padding-right: 48px; }
+.eye-btn {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 18px;
+  padding: 4px; line-height: 1; opacity: 0.7;
+}
+.eye-btn:hover { opacity: 1; }
+.alert-warn {
+  background: rgba(200, 169, 110, 0.1);
+  border: 1px solid rgba(200, 169, 110, 0.3);
+  color: var(--gold);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 8px;
+}
 </style>
