@@ -23,7 +23,7 @@ const defaultDays = [
 async function load() {
   loading.value = true; error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     hours.value = config.hours?.length ? config.hours.map((h, i) => ({ ...h, sortOrder: i + 1 })) : [...defaultDays]
   } catch { error.value = 'Error al cargar horarios' }
   finally { loading.value = false }

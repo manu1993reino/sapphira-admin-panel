@@ -16,7 +16,7 @@ const saving = ref(false)
 async function load() {
   loading.value = true; error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     posts.value = config.blog || []
   } catch { error.value = 'Error al cargar blog' }
   finally { loading.value = false }

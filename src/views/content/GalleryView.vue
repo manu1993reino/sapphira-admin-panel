@@ -16,7 +16,7 @@ const saving = ref(false)
 async function load() {
   loading.value = true; error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     items.value = config.gallery || []
   } catch { error.value = 'Error al cargar galeria' }
   finally { loading.value = false }

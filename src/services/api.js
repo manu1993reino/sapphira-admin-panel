@@ -1,3 +1,5 @@
+import { useAuthStore } from '@/stores/auth'
+
 const BASE = import.meta.env.VITE_API_URL || ''
 
 let onUnauthorized = null
@@ -6,9 +8,18 @@ export function setOnUnauthorized(callback) {
   onUnauthorized = callback
 }
 
+function injectClinicId(path) {
+  if (!path.startsWith('/api/v1/admin/')) return path
+  const auth = useAuthStore()
+  if (!auth.isSuper || !auth.clinicId) return path
+  const sep = path.includes('?') ? '&' : '?'
+  return `${path}${sep}clinicId=${auth.clinicId}`
+}
+
 async function request(path, options = {}) {
   const { headers: optHeaders, ...rest } = options
-  const res = await fetch(`${BASE}${path}`, {
+  const finalPath = injectClinicId(path)
+  const res = await fetch(`${BASE}${finalPath}`, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...optHeaders },
     ...rest,
@@ -96,8 +107,10 @@ export const markRedemptionUsed = (id) =>
   })
 
 // Clinic Config
-export const getClinicConfig = (clinicId) =>
-  request(`/api/v1/clinic/${clinicId}/config`)
+export const getClinicConfig = (clinicId) => {
+  const id = clinicId ?? useAuthStore().clinicId
+  return request(`/api/v1/clinic/${id}/config`)
+}
 
 export const updateClinicConfig = (body) =>
   request('/api/v1/admin/clinic', { method: 'PUT', body: JSON.stringify(body) })

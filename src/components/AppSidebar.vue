@@ -1,9 +1,25 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { getAllClinics } from '@/services/api'
 
 const auth   = useAuthStore()
 const router = useRouter()
+
+const clinics = ref([])
+
+onMounted(async () => {
+  if (auth.isSuper) {
+    try { clinics.value = await getAllClinics() } catch { /* ignore */ }
+  }
+})
+
+function onClinicChange(e) {
+  const id = Number(e.target.value)
+  const clinic = clinics.value.find(c => c.id === id)
+  if (clinic) auth.selectClinic({ id: clinic.id, name: clinic.name })
+}
 
 const mainLinks = [
   { to: '/dashboard',    icon: '◈', label: 'Dashboard' },
@@ -43,6 +59,20 @@ async function logout() {
     </div>
 
     <nav class="sidebar-nav">
+      <template v-if="auth.isSuper">
+        <div class="clinic-selector">
+          <label class="clinic-selector-label">Gestionando clínica</label>
+          <select
+            class="clinic-select"
+            :value="auth.selectedClinic?.id ?? ''"
+            @change="onClinicChange"
+          >
+            <option value="" disabled>Seleccionar clínica...</option>
+            <option v-for="c in clinics" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+      </template>
+
       <RouterLink
         v-for="link in mainLinks"
         :key="link.to"
@@ -112,6 +142,23 @@ async function logout() {
 .nav-link:hover { color: var(--text); background: var(--bg3); }
 .nav-link--active { color: var(--gold); background: rgba(200,169,110,0.1); }
 .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+
+.clinic-selector {
+  padding: 0 8px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.clinic-selector-label {
+  display: block; color: var(--dim); font-size: 10px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+}
+.clinic-select {
+  width: 100%; padding: 7px 10px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--gold); font-size: 13px; cursor: pointer;
+}
+.clinic-select:focus { outline: none; border-color: var(--gold); }
+.clinic-select option { background: var(--bg2); color: var(--text); }
 
 .nav-section-label {
   color: var(--dim); font-size: 10px; font-weight: 600;

@@ -21,7 +21,7 @@ const form = ref({
 async function load() {
   loading.value = true; error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     const b = config.brand || {}
     const c = config.contact || {}
     const f = config.finance || {}

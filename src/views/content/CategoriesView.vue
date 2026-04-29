@@ -24,7 +24,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     categories.value = config.categories || []
   } catch {
     error.value = 'Error al cargar categorias'

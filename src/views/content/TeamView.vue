@@ -17,7 +17,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     members.value = config.team || []
   } catch {
     error.value = 'Error al cargar equipo'

@@ -16,7 +16,7 @@ const saving = ref(false)
 async function load() {
   loading.value = true; error.value = ''
   try {
-    const config = await getClinicConfig(auth.clinicId)
+    const config = await getClinicConfig()
     promotions.value = config.promotions || []
   } catch { error.value = 'Error al cargar promociones' }
   finally { loading.value = false }
