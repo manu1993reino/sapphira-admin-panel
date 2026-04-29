@@ -71,9 +71,6 @@ async function save() {
           <div class="form-group"><label class="form-label">Tagline</label><input v-model="form.tagline" class="form-input" placeholder="Tu clinica de confianza" /></div>
           <div class="form-group"><label class="form-label">Ciudad</label><input v-model="form.city" class="form-input" /></div>
           <div class="form-group" style="grid-column:span 2"><label class="form-label">Ubicacion</label><input v-model="form.location" class="form-input" placeholder="Calle ejemplo 123, Madrid" /></div>
-          <div class="form-group"><label class="form-label">Color principal</label><input v-model="form.themeColor" class="form-input" type="color" style="height:44px;padding:4px" /></div>
-          <div class="form-group"><label class="form-label">Color fondo</label><input v-model="form.bgColor" class="form-input" type="color" style="height:44px;padding:4px" /></div>
-          <div class="form-group" style="grid-column:span 2"><label class="form-label">URL logo</label><input v-model="form.logoUrl" class="form-input" placeholder="https://..." /></div>
         </div>
       </div>
 
