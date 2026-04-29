@@ -18,6 +18,15 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 178.104.102.76
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            rm -rf /var/www/sapphira-admin.valoredigital.es/*
+
       - name: Upload to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -28,4 +37,3 @@ jobs:
           target: /var/www/sapphira-admin.valoredigital.es
           strip_components: 1
           overwrite: true
-          rm: true
