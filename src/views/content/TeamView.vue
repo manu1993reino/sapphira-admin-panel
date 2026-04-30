@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getClinicConfig, createTeamMember, updateTeamMember, deleteTeamMember } from '@/services/api'
+import { getClinicConfig, createTeamMember, updateTeamMember, deleteTeamMember, uploadImage } from '@/services/api'
 
 const auth = useAuthStore()
 const members = ref([])
@@ -12,6 +12,8 @@ const modal = ref(null)
 const form = ref({})
 const modalErr = ref('')
 const saving = ref(false)
+const uploading = ref(false)
+const fileInput = ref(null)
 
 async function load() {
   loading.value = true
@@ -41,6 +43,26 @@ function openEdit(m) {
 }
 
 function closeModal() { modal.value = null }
+
+async function handleFileUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  uploading.value = true
+  modalErr.value = ''
+  try {
+    const { url } = await uploadImage(file)
+    form.value.photoUrl = url
+  } catch (e) {
+    modalErr.value = 'Error al subir imagen: ' + (e.message || 'desconocido')
+  } finally {
+    uploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+function removePhoto() {
+  form.value.photoUrl = ''
+}
 
 async function submitForm() {
   if (!form.value.name?.trim()) { modalErr.value = 'El nombre es obligatorio'; return }
@@ -94,7 +116,9 @@ async function handleDelete(id) {
             <tr v-for="m in members" :key="m.id">
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
-                  <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0"
+                  <img v-if="m.photoUrl" :src="m.photoUrl" :alt="m.name"
+                    style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#222" />
+                  <div v-else style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0"
                        :style="{ background: m.color || '#C8A96E' }">
                     {{ m.initials || m.name?.charAt(0) }}
                   </div>
@@ -127,7 +151,25 @@ async function handleDelete(id) {
           <div class="form-group"><label class="form-label">Color</label><input v-model="form.color" class="form-input" type="color" style="height:44px;padding:4px" /></div>
           <div class="form-group"><label class="form-label">Orden</label><input v-model="form.sortOrder" class="form-input" type="number" /></div>
         </div>
-        <div class="form-group"><label class="form-label">URL foto</label><input v-model="form.photoUrl" class="form-input" placeholder="https://..." /></div>
+        <div class="form-group">
+          <label class="form-label">Foto</label>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div v-if="form.photoUrl" style="position:relative">
+              <img :src="form.photoUrl" alt="Foto" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);background:#222" />
+              <button type="button" @click="removePhoto" style="position:absolute;top:-4px;right:-4px;width:22px;height:22px;border-radius:50%;background:#e74c3c;border:2px solid var(--bg);color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1" title="Quitar foto">&times;</button>
+            </div>
+            <div v-else style="width:72px;height:72px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:11px;text-align:center">
+              Sin foto
+            </div>
+            <div>
+              <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" style="display:none" @change="handleFileUpload" />
+              <button type="button" class="btn btn-sm btn-secondary" :disabled="uploading" @click="fileInput?.click()">
+                {{ uploading ? 'Subiendo...' : (form.photoUrl ? 'Cambiar' : 'Subir foto') }}
+              </button>
+              <p style="color:var(--dim);font-size:11px;margin:6px 0 0">JPG, PNG o WebP. Máx 5 MB.</p>
+            </div>
+          </div>
+        </div>
         <div class="form-group"><label class="form-label">Experiencia</label><input v-model="form.experience" class="form-input" placeholder="15 anos de experiencia" /></div>
         <div class="form-group"><label class="form-label">Bio</label><textarea v-model="form.bio" class="form-input" rows="3" style="resize:vertical"></textarea></div>
         <div class="form-group"><label class="form-label">Especialidades (separadas por coma)</label><input v-model="form.specialties" class="form-input" placeholder="Medicina estetica, Laser" /></div>

@@ -119,6 +119,26 @@ export const updateClinicConfig = (body) =>
 export const updateHours = (body) =>
   request('/api/v1/admin/hours', { method: 'PUT', body: JSON.stringify(body) })
 
+// Images
+export async function uploadImage(file) {
+  const auth = useAuthStore()
+  const formData = new FormData()
+  formData.append('file', file)
+  let path = '/api/v1/admin/images'
+  if (auth.isSuper && auth.clinicId) path += `?clinicId=${auth.clinicId}`
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+  if (res.status === 401) { if (onUnauthorized) onUnauthorized(); throw new Error('401') }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.message || `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
 // Team
 export const createTeamMember = (body) =>
   request('/api/v1/admin/team', { method: 'POST', body: JSON.stringify(body) })
